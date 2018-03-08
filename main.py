@@ -1,6 +1,5 @@
 import sys
 import numpy as np
-import math
 import pandas
 
 # global that will be the dataset to use
@@ -70,7 +69,7 @@ def get_average(arr):
 		# Increment the count by 1
 		count += 1
 	# Return the total divided by the count
-	return divide_a_by_b(float(total)/float(count))
+	return divide_a_by_b(float(total),float(count))
 
 #
 # This function will return the squared error of from the prediction(param) and the test_point(param)
@@ -389,7 +388,7 @@ def tune_knn(data, classes, knn_type):
 	# Set a running best preformance so far
 	best_so_far = 0
 	# Set a maximum of k so you do not run forever
-	maxi = 15
+	maxi = 10
 	# For k beginning at 1 and running to the mac k you wish to test 
 	for k in range(1, maxi):
 		# Get the preformance of the knn run
@@ -407,6 +406,7 @@ def tune_knn(data, classes, knn_type):
 			# If this is probably your first run or you have some weird data
 			# Your best_so_far performance willb be zero
 			if best_so_far is 0:
+				print "asdf"
 				# Set the top to be k
 				top = k
 				# Set the best_so_far performace to be the one you just calculated
@@ -421,11 +421,12 @@ def tune_knn(data, classes, knn_type):
 			else:
 				pass
 	# Tell the user the best k and its performance
-	print "Best K = " + str(top) + " Perf: " + str(best_so_far)
+	print "Best K = " + str(top) + " Performance: " + str(best_so_far)
 
 
 # Read in the file passed in by the command line when script started
 read_csv(sys.argv[1])
+print "###### RESULTS ######"
 # Split the data to be used
 split_data()
 # Read in the second argument passed in by the command line and use it as they type of knn
