@@ -179,13 +179,19 @@ def five_fold_cross_validation_folds(data, classes):
 	# Get the number of cols in the data
 	data_len = len(data[0])
 
-	folds = np.ndarray([])
+	folds = []
 	# Create the empty arrays that will be the folds
 	for count in range(5):
+		# Make an empty array that will be the correct size
+		temp = np.ndarray(shape=(1,data_len))
+		# temp = np.ones([1,data_len])
 		# Add a data fold to the folds array
-		folds = np.append(folds,np.ndarray(shape=(1,data_len)))
+		folds.append(temp)
+		# Make an empty array that will be the correct size
+		temp1 = np.ndarray(shape=(1,1))
+
 		# Add a class fold to the folds array
-		folds = np.append(folds,np.ndarray(shape=(1,1)))
+		folds.append(temp1)
 
 	# Number of rows in data
 	max_length = len(data)
@@ -211,17 +217,19 @@ def five_fold_cross_validation_folds(data, classes):
 					# Add the corresponding data instance to the fold
 					folds[index] = np.vstack((folds[index], data[i]))
 					# Add the corresponding class instance to the fold
-					folds[index + 1]	= np.vstack((folds[index + 1], [classes[i]]))
-					# Remove the corresponding data instance from the data list
-					data = np.delete(data, i,0)
-					# Remove the corresponding class instance from the class list
-					classes = np.delete(classes, i,0)
-					# Increment the running total of instances you have added so far
+					folds[index + 1] = np.vstack((folds[index + 1], [classes[i]]))
+					# If you are still on beginning folds
+					if index < 8:
+						# Remove the corresponding data instance from the data list
+						data = np.delete(data, i,0)
+						# Remove the corresponding class instance from the class list
+						classes = np.delete(classes, i,0)
+						# Increment the running total of instances you have added so far
 					added_so_far += 1
 	# For each array in the folds array
 	for index in range(len(folds)):
 		# Remove the first element because it is a placeholder
-		folds[i] = np.delete(folds[i], 0,0)
+		folds[index] = np.delete(folds[index], 0,0)
 	# Return the folds
 	return folds
 
@@ -349,45 +357,80 @@ def create_training_and_test_sets(i, folds):
 	# Return all of the data and class sets
 	return (testing_data, testing_classes, training_data, training_classes)
 
-def k_nearest_neighbors(data, classes, k, knn):
+#
+# This function will prefore the knn algo with either classification or regression
+#
+def k_nearest_neighbors(data, classes, k, knn_type):
+	# Get the five folds to test
 	folds = five_fold_cross_validation_folds(data, classes)
+	# Set an array to house all of the scores you get from the five test runs
 	scores = []
+	# For each fold, which you iterate thorugh two by two to account for the data and class folds
 	for i in range(0,10,2):
+		# Get the test and training sets
 		test_train_sets = create_training_and_test_sets(i, folds)
-		if knn is "classification":
+		# If you are doing classification
+		if knn_type == "classification":
+			# Preform the knn classification test run with the training and test data sets
 			scores.append(test_run_knn_classification(test_train_sets[0], test_train_sets[1], test_train_sets[2], test_train_sets[3], k))
+		# Otherwise you are doing regression
 		else:
+			# Preform the knn regresson test run with the training and test data sets
 			scores.append(test_run_knn_regression(test_train_sets[0], test_train_sets[1], test_train_sets[2], test_train_sets[3], k))
-
-
+	# Get the average of the scores, this will be your preformance for this knn run			
 	return np.average(scores)
 
-def tune_knn(data, classes, knn):
+#
+# This function will tune your knn algo to find the best k
+#
+def tune_knn(data, classes, knn_type):
+	# Set a running best number for k
 	top = 0
+	# Set a running best preformance so far
 	best_so_far = 0
-	# count = len(np.unique(classes))
+	# Set a maximum of k so you do not run forever
 	maxi = 15
-	for i in range(1, maxi):
-		pref = k_nearest_neighbors(data, classes, i, knn)
-		if knn is "classification":
+	# For k beginning at 1 and running to the mac k you wish to test 
+	for k in range(1, maxi):
+		# Get the preformance of the knn run
+		pref = k_nearest_neighbors(data, classes, k, knn_type)
+		# If you are doing classification for knn
+		if knn_type == "classification":
+			# If the preformance is greater than the best_so_far performance
 			if pref > best_so_far:
-				top = i
+				# Set top to be the k
+				top = k
+				# Set the best_so_far performace to be the one you just calculated
 				best_so_far = pref
+		# Otherwise you are doing regression
 		else:
+			# If this is probably your first run or you have some weird data
+			# Your best_so_far performance willb be zero
 			if best_so_far is 0:
+				# Set the top to be k
+				top = k
+				# Set the best_so_far performace to be the one you just calculated
 				best_so_far = pref
+			# If your performance is less than best_so_far (which is good for regression)
 			elif pref < best_so_far:
-				top = i
+				# Set the top to be k
+				top = k
+				# Set the best_so_far performace to be the one you just calculated
 				best_so_far = pref
+			# Just pass if you did not make the cut
 			else:
 				pass
+	# Tell the user the best k and its performance
 	print "Best K = " + str(top) + " Perf: " + str(best_so_far)
 
 
 # Read in the file passed in by the command line when script started
 read_csv(sys.argv[1])
+# Split the data to be used
+split_data()
 # Read in the second argument passed in by the command line and use it as they type of knn
 knn_type = sys.argv[2]
+
 # Tune the data to find the best k
-tune_knn(data_set, class_set, knn_type)
+tune_knn(data_set, class_set, str(knn_type))
 
