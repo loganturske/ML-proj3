@@ -106,6 +106,9 @@ def read_csv(filepath):
 	global data_set
 	# Read csv in using pandas and set it to the data_set global
 	data_set = pandas.read_csv(filepath)
+	# Randomize the data
+	print data_set.shape[0]
+	data_set = data_set.sample(n=data_set.shape[0])
 
 #
 # This function will split the global data_set into features, classes, and measureable data
@@ -370,8 +373,10 @@ def k_nearest_neighbors(data, classes, k, knn_type):
 		test_train_sets = create_training_and_test_sets(i, folds)
 		# If you are doing classification
 		if knn_type == "classification":
+			# Preform the condensed nearest neighbors on the training set
+			cnn = condensed_nearest_neighbor(test_train_sets[0], test_train_sets[1]) 
 			# Preform the knn classification test run with the training and test data sets
-			scores.append(test_run_knn_classification(test_train_sets[0], test_train_sets[1], test_train_sets[2], test_train_sets[3], k))
+			scores.append(test_run_knn_classification(cnn[0], cnn[1], test_train_sets[2], test_train_sets[3], k))
 		# Otherwise you are doing regression
 		else:
 			# Preform the knn regresson test run with the training and test data sets
@@ -406,7 +411,6 @@ def tune_knn(data, classes, knn_type):
 			# If this is probably your first run or you have some weird data
 			# Your best_so_far performance willb be zero
 			if best_so_far is 0:
-				print "asdf"
 				# Set the top to be k
 				top = k
 				# Set the best_so_far performace to be the one you just calculated
@@ -423,15 +427,69 @@ def tune_knn(data, classes, knn_type):
 	# Tell the user the best k and its performance
 	print "Best K = " + str(top) + " Performance: " + str(best_so_far)
 
-
+#
+# This function will preform the condesed nearest neighbors algo on the data passed in
+#
+def condensed_nearest_neighbor(training_data, training_classes):
+	# Get length of training data
+	training_data_length = len(training_data)
+	# Start with an empy set Z for points
+	z = []
+	# Have another set for classes of the points in z
+	z_class = []
+	# Add an arbitray point to Z
+	z.append(training_data[0])
+	# Add an arbitraty point to Z for classification
+	z_class.append(training_classes[0])
+	# Set a value to see if Z has been changed
+	change = True
+	# Set the length of Z to reference it in while loop
+	z_length = len(z)
+	
+	# Iterate until no change in Z
+	while(change):
+		# Set a list for random index numbers
+		rand_nums = list(range(0,training_data_length-1))
+		# Randomize indexes
+		np.random.shuffle(rand_nums)
+		# Iterate through all of x in X (training set) in random order
+		for row_index in rand_nums:
+			# Get the point class nearest me
+			x_prime = get_neighbors(z, training_data[row_index], 1)
+			# Get the class of the only neighbor
+			x_prime = z_class[x_prime[0]]
+			# If missclassified
+			if training_classes[row_index] != x_prime:
+				# Add to Z
+				z.append(training_data[row_index])
+				# Add to Z
+				z_class.append(training_classes[row_index])
+		# If length of Z is the same as beginning of loop
+		if len(z) == z_length:
+			# Nothing changed and you can stop loop
+			change = False
+		else:
+			# Set the new length of z
+			z_length = len(z)
+	# # Get a reference to the global dataset
+	# global data_set
+	# # Set the global dataset
+	# data_set = z
+	# # Get a rederence to the global dataset
+	# global class_set
+	# # Set the global class set
+	# class_set = z_class
+	return [z, z_class]
 # Read in the file passed in by the command line when script started
 read_csv(sys.argv[1])
-print "###### RESULTS ######"
 # Split the data to be used
 split_data()
 # Read in the second argument passed in by the command line and use it as they type of knn
 knn_type = sys.argv[2]
 
+print "###### RESULTS ######"
 # Tune the data to find the best k
 tune_knn(data_set, class_set, str(knn_type))
+
+
 
